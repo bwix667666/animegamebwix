@@ -2,9 +2,9 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>Bartek: Korpo-Rozwałka (Anime & Realism Update)</title>
+    <title>Bartek: Korpo-Rozwałka (Daylight & Giants Update)</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #111; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
+        body { margin: 0; overflow: hidden; background-color: #87CEEB; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
         
         /* --- HUD --- */
         #ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; z-index: 5; }
@@ -46,7 +46,6 @@
     </style>
 </head>
 <body>
-    <!-- Odtwarzacz muzyki z anime. Oczekuje pliku 'anime.mp3' w folderze z grą -->
     <audio id="bgmMusic" loop>
         <source src="anime.mp3" type="audio/mpeg">
     </audio>
@@ -68,7 +67,7 @@
     </div>
     
     <div id="menu">
-        <h1 id="menuTitle">KORPO-ROZWAŁKA<br><span style="font-size: 30px; color:#ff0055;">ANIME UPDATE</span></h1>
+        <h1 id="menuTitle">KORPO-ROZWAŁKA<br><span style="font-size: 30px; color:#ff0055;">DAYLIGHT GIANTS</span></h1>
         
         <div class="menu-tabs">
             <button class="tab-btn active" onclick="switchTab('playTab', this)">ZAGRAJ</button>
@@ -143,10 +142,12 @@
             }
         };
 
-        // --- INICJALIZACJA SCENY ---
+        // --- INICJALIZACJA SCENY (JASNY DZIEŃ) ---
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x1a2530); 
-        scene.fog = new THREE.FogExp2(0x1a2530, 0.007); 
+        // Błękitne niebo anime
+        scene.background = new THREE.Color(0x87CEEB); 
+        // Lekka i jasna mgła (oddaje perspektywę powietrzną za dnia)
+        scene.fog = new THREE.FogExp2(0x87CEEB, 0.003); 
 
         const camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 1000);
         
@@ -154,34 +155,31 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        // Włączenie lepszego mapowania tonów (fotorealizm)
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.2;
+        renderer.toneMappingExposure = 1.3; // Zwiększona ekspozycja dla efektu słońca
         document.body.appendChild(renderer.domElement);
 
-        // --- TEKSTURY PROCEDURALNE ---
+        // --- JASNE TEKSTURY PROCEDURALNE ---
         const floorCanvas = document.createElement('canvas'); floorCanvas.width = 1024; floorCanvas.height = 1024;
         const ctx = floorCanvas.getContext('2d');
-        ctx.fillStyle = '#1e1e1e'; ctx.fillRect(0, 0, 1024, 1024);
-        ctx.fillStyle = '#252525'; ctx.fillRect(0, 0, 512, 512); ctx.fillRect(512, 512, 512, 512);
-        ctx.strokeStyle = '#111'; ctx.lineWidth = 10;
+        ctx.fillStyle = '#cccccc'; ctx.fillRect(0, 0, 1024, 1024); // Jasny beton
+        ctx.fillStyle = '#b3b3b3'; ctx.fillRect(0, 0, 512, 512); ctx.fillRect(512, 512, 512, 512);
+        ctx.strokeStyle = '#999999'; ctx.lineWidth = 10;
         ctx.strokeRect(0,0,512,512); ctx.strokeRect(512,0,512,512); ctx.strokeRect(0,512,512,512); ctx.strokeRect(512,512,512,512);
         const floorTexture = new THREE.CanvasTexture(floorCanvas);
         floorTexture.wrapS = THREE.RepeatWrapping; floorTexture.wrapT = THREE.RepeatWrapping;
         floorTexture.repeat.set(100, 100);
 
-        // ŚRODOWISKO Z FOTOREALISTYCZNYM MATERIAŁEM
         const floorGeo = new THREE.PlaneGeometry(1000, 1000);
-        // Używamy MeshPhysicalMaterial do podłogi (efekt mokrego betonu)
-        const floorMat = new THREE.MeshPhysicalMaterial({ map: floorTexture, roughness: 0.4, metalness: 0.3, clearcoat: 0.2 });
+        const floorMat = new THREE.MeshPhysicalMaterial({ map: floorTexture, roughness: 0.6, metalness: 0.1, clearcoat: 0.1 });
         const floor = new THREE.Mesh(floorGeo, floorMat);
         floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true;
         scene.add(floor);
 
         const buildCanvas = document.createElement('canvas'); buildCanvas.width = 1024; buildCanvas.height = 1024;
         const bCtx = buildCanvas.getContext('2d');
-        bCtx.fillStyle = '#0a0a0f'; bCtx.fillRect(0,0,1024,1024);
-        bCtx.fillStyle = '#00ffff'; // Neonowe okna 
+        bCtx.fillStyle = '#e0e0e0'; bCtx.fillRect(0,0,1024,1024); // Białe/jasnoszare budynki
+        bCtx.fillStyle = '#88ccff'; // Jasnoniebieskie, odbijające niebo okna
         for(let i=20; i<1024; i+=80) { for(let j=20; j<1024; j+=100) { if(Math.random()>0.3) bCtx.fillRect(i, j, 60, 80); } }
         const buildTexture = new THREE.CanvasTexture(buildCanvas);
         buildTexture.wrapS = THREE.RepeatWrapping; buildTexture.wrapT = THREE.RepeatWrapping;
@@ -199,21 +197,20 @@
             scene.add(b);
         }
 
-        // --- REALISTYCZNE OŚWIETLENIE ---
-        // HemisphereLight - miękkie odbicia od nieba (niebieskie) i ziemi (ciemne)
-        const hemiLight = new THREE.HemisphereLight(0x4466ff, 0x111111, 0.6);
+        // --- SILNE OŚWIETLENIE SŁONECZNE ---
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.8);
         scene.add(hemiLight);
         
-        const sun = new THREE.DirectionalLight(0xffffee, 1.2);
-        sun.position.set(200, 300, -100);
+        const sun = new THREE.DirectionalLight(0xffffff, 1.5);
+        sun.position.set(200, 300, 100);
         sun.castShadow = true;
         sun.shadow.camera.left = -150; sun.shadow.camera.right = 150;
         sun.shadow.camera.top = 150; sun.shadow.camera.bottom = -150;
         sun.shadow.mapSize.width = 4096; sun.shadow.mapSize.height = 4096;
-        sun.shadow.bias = -0.001; // Redukcja artefaktów na cieniach
+        sun.shadow.bias = -0.001; 
         scene.add(sun);
         
-        const muzzleFlash = new THREE.PointLight(0x00ffff, 0, 30); // Neonowy strzał
+        const muzzleFlash = new THREE.PointLight(0x00ffff, 0, 30); 
         scene.add(muzzleFlash);
 
         // --- KAMERA ---
@@ -232,32 +229,23 @@
         // --- ULTRA HIGH-POLY PBR BROŃ ---
         const gunContainer = new THREE.Group(); const gunGroup = new THREE.Group();
         
-        // PBR Materials (Realizm)
         const darkGunmetal = new THREE.MeshPhysicalMaterial({ color: 0x111111, metalness: 0.95, roughness: 0.15, clearcoat: 1.0, clearcoatRoughness: 0.1 });
         const lightAlloy = new THREE.MeshPhysicalMaterial({ color: 0x666666, metalness: 1.0, roughness: 0.3, clearcoat: 0.5 });
         const glowingNeon = new THREE.MeshPhysicalMaterial({ color: 0x00ffff, emissive: 0x00ffff, emissiveIntensity: 2.0 });
-        // Materiał celownika - Prawdziwe Szkło
         const glassMat = new THREE.MeshPhysicalMaterial({ color: 0xccffff, transmission: 0.9, opacity: 1, metalness: 0, roughness: 0.1, thickness: 0.1 });
 
         const body1 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.3, 1.2), darkGunmetal);
         const body2 = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.15, 0.8), lightAlloy); body2.position.set(0, 0.2, -0.2);
-        
-        // Szczegółowa lufa
         const barrelOuter = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.9, 32), lightAlloy);
         barrelOuter.rotateX(Math.PI / 2); barrelOuter.position.set(0, 0.05, -0.9);
         const barrelInner = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.91, 32), new THREE.MeshBasicMaterial({color: 0x000000}));
         barrelInner.rotateX(Math.PI / 2); barrelInner.position.set(0, 0.05, -0.9);
-
-        // Laser i neon
         const laser = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.4, 16), darkGunmetal);
         laser.rotateX(Math.PI / 2); laser.position.set(0, -0.05, -0.7);
         const laserLine = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.01, 0.3), glowingNeon);
         laserLine.position.set(0, -0.05, -0.7);
-
-        // Celownik (Holo ze szkłem)
         const sightBase = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.2), darkGunmetal); sightBase.position.set(0, 0.3, -0.2);
         const sightGlass = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.15, 0.02), glassMat); sightGlass.position.set(0, 0.4, -0.25);
-        
         const mag = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.4, 0.25), darkGunmetal); mag.position.set(0, -0.3, -0.1); mag.rotation.x = -0.1;
         const grip = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.35, 0.2), lightAlloy); grip.position.set(0, -0.25, 0.4); grip.rotation.x = 0.2;
         const stock = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.25, 0.6), darkGunmetal); stock.position.set(0, -0.1, 0.8);
@@ -302,8 +290,11 @@
                     this.mesh.add(body, eye, gunL, gunR, legL, legR);
                 }
 
+                // GIGANTYCZNI PRZECIWNICY - Skala x2
+                this.mesh.scale.set(2.0, 2.0, 2.0);
+
                 this.mesh.traverse(c => { if(c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
-                this.mesh.position.set(x, type===0?1.2:0, z); scene.add(this.mesh);
+                this.mesh.position.set(x, type===0?2.4:0, z); scene.add(this.mesh);
                 this.lastShot = performance.now() + Math.random() * 2000; this.walkCycle = Math.random() * Math.PI * 2;
             }
 
@@ -312,21 +303,25 @@
                 const dir = new THREE.Vector3().subVectors(playerPos, this.mesh.position).setY(0).normalize();
                 const dist = this.mesh.position.distanceTo(playerPos);
                 
-                if (dist > 12) { 
+                // Zwiększony dystans kolizji przez skalę x2
+                if (dist > 20) { 
                     this.mesh.position.addScaledVector(dir, this.speed * delta); this.walkCycle += delta * this.speed * 1.5;
                     if (this.type === 0) {
                         this.mesh.children[2].position.y = -0.2 + Math.abs(Math.sin(this.walkCycle)) * 0.5;
                         this.mesh.children[3].position.y = -0.2 + Math.abs(Math.cos(this.walkCycle)) * 0.5;
-                    } else { this.mesh.position.y = Math.abs(Math.sin(this.walkCycle)) * 0.6; }
+                    } else { 
+                        this.mesh.position.y = Math.abs(Math.sin(this.walkCycle)) * 1.2; 
+                    }
                 }
 
                 const now = performance.now();
-                if (now - this.lastShot > (this.type===0?800:1500) && dist < 60) { this.shoot(playerPos); this.lastShot = now; }
+                if (now - this.lastShot > (this.type===0?800:1500) && dist < 80) { this.shoot(playerPos); this.lastShot = now; }
             }
 
             shoot(playerPos) {
-                const proj = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), new THREE.MeshBasicMaterial({ color: this.type===0?0xff0055:0x00ffff }));
-                proj.position.copy(this.mesh.position).setY(this.type === 0 ? 3.5 : 3);
+                const proj = new THREE.Mesh(new THREE.SphereGeometry(0.8, 16, 16), new THREE.MeshBasicMaterial({ color: this.type===0?0xff0055:0x00ffff }));
+                // Pkt wylotu pocisku też musi uwzględniać nową skalę
+                proj.position.copy(this.mesh.position).setY(this.type === 0 ? 7.0 : 6.0);
                 const dir = new THREE.Vector3().subVectors(playerPos, proj.position).normalize();
                 proj.velocity = dir.multiplyScalar(this.type === 0 ? 55 : 40); scene.add(proj); enemyProjectiles.push(proj);
             }
@@ -343,11 +338,15 @@
                 const head = new THREE.Mesh(new THREE.BoxGeometry(3, 4, 4), furMat); head.position.set(0, 14, 2);
                 const eye = new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.5, 4.1), new THREE.MeshBasicMaterial({color:0xffffff})); eye.position.set(0, 14.5, 2);
                 const armL = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.2, 14, 32), furMat); armL.position.set(-6, 7, 1); armL.rotation.z = -0.2;
-                const armR = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.2, 14, 32), cyberMat); armR.position.set(6, 7, 1); armR.rotation.z = 0.2; // Cyber-łapa
+                const armR = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.2, 14, 32), cyberMat); armR.position.set(6, 7, 1); armR.rotation.z = 0.2; 
                 const legL = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 6, 32), furMat); legL.position.set(-3, 3, 0);
                 const legR = new THREE.Mesh(new THREE.CylinderGeometry(2, 2, 6, 32), furMat); legR.position.set(3, 3, 0);
 
                 this.mesh.add(torso, pecs, head, eye, armL, armR, legL, legR);
+                
+                // BOSS RÓWNIEŻ JEST 2X WIĘKSZY!
+                this.mesh.scale.set(2.0, 2.0, 2.0);
+
                 this.mesh.traverse(c => { if(c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
                 this.mesh.position.set(0, 0, -100); scene.add(this.mesh);
                 
@@ -360,11 +359,11 @@
                 const dir = new THREE.Vector3().subVectors(playerPos, this.mesh.position).setY(0).normalize();
                 const dist = this.mesh.position.distanceTo(playerPos);
                 
-                if (dist > 30) {
+                if (dist > 50) {
                     this.mesh.position.addScaledVector(dir, 18 * delta); this.animCycle += delta * 6;
                     this.mesh.children[4].position.y = 7 + Math.sin(this.animCycle)*2.5;
                     this.mesh.children[5].position.y = 7 + Math.cos(this.animCycle)*2.5;
-                    this.mesh.position.y = Math.abs(Math.sin(this.animCycle)) * 1.8;
+                    this.mesh.position.y = Math.abs(Math.sin(this.animCycle)) * 3.6;
                 }
 
                 const now = performance.now();
@@ -372,8 +371,9 @@
             }
 
             throwBoulder(playerPos) {
-                const boulder = new THREE.Mesh(new THREE.DodecahedronGeometry(2.5, 1), new THREE.MeshPhysicalMaterial({ color: 0x444444, roughness: 0.9 }));
-                boulder.position.copy(this.mesh.position).setY(15);
+                // Skalowany głaz bosa
+                const boulder = new THREE.Mesh(new THREE.DodecahedronGeometry(5.0, 1), new THREE.MeshPhysicalMaterial({ color: 0x444444, roughness: 0.9 }));
+                boulder.position.copy(this.mesh.position).setY(30);
                 const dir = new THREE.Vector3().subVectors(playerPos, boulder.position); dir.y += 12; dir.normalize();
                 boulder.velocity = dir.multiplyScalar(60); boulder.isBoulder = true;
                 scene.add(boulder); enemyProjectiles.push(boulder);
@@ -427,7 +427,6 @@
         document.getElementById('startButton').addEventListener('click', () => { 
             if (gameState === 'GAMEOVER') resetGame(); 
             document.body.requestPointerLock(); 
-            // Wymuszenie muzyki (przeglądarki wymagają kliknięcia użytkownika)
             bgm.play().catch(e => console.log("Brak pliku anime.mp3", e));
         });
 
@@ -451,7 +450,7 @@
             enemyProjectiles.forEach(p => scene.remove(p)); enemyProjectiles.length = 0;
             if (bossEntity) { scene.remove(bossEntity.mesh); bossEntity = null; bossActive = false; document.getElementById('bossHealthContainer').style.display='none'; }
             yawObject.position.set(0, 10, 0); velocity.set(0,0,0);
-            document.getElementById('menuTitle').innerHTML = 'KORPO-ROZWAŁKA<br><span style="font-size: 30px; color:#ff0055;">ANIME UPDATE</span>';
+            document.getElementById('menuTitle').innerHTML = 'KORPO-ROZWAŁKA<br><span style="font-size: 30px; color:#ff0055;">DAYLIGHT GIANTS</span>';
         }
 
         const raycaster = new THREE.Raycaster();
@@ -487,7 +486,7 @@
                     hitEnemy.enemy.hp -= 50;
                     if (hitEnemy.enemy.hp <= 0) {
                         scene.remove(hitEnemy.enemy.mesh); enemies.splice(hitEnemy.index, 1);
-                        if (!canJump) { hp = Math.min(200, hp + 25); ammo += 20; score += 300; } // Movement anime bonus
+                        if (!canJump) { hp = Math.min(200, hp + 25); ammo += 20; score += 300; } 
                         else { hp = Math.min(200, hp + 10); ammo += 5; score += 100; }
                         updateHUD();
                     }
@@ -541,7 +540,7 @@
                 else { velocity.addScaledVector(inputDir, 40.0 * delta); }
 
                 velocity.y -= 50.0 * delta; yawObject.position.addScaledVector(velocity, delta);
-                if (yawObject.position.y < 8) { velocity.y = 0; yawObject.position.y = 8; canJump = true; }
+                if (yawObject.position.y < 10) { velocity.y = 0; yawObject.position.y = 10; canJump = true; } // Poprawiona wysokość gracza
                 
                 const pos = yawObject.position;
                 if(pos.x > 140) pos.x = 140; if(pos.x < -140) pos.x = -140; if(pos.z > 140) pos.z = 140; if(pos.z < -140) pos.z = -140;
@@ -565,7 +564,8 @@
                     if(proj.isBoulder) proj.velocity.y -= 25 * delta;
                     proj.position.addScaledVector(proj.velocity, delta);
                     
-                    if (proj.position.distanceTo(yawObject.position) < (proj.isBoulder ? 6 : 3)) {
+                    // Zwiększony obszar detekcji trafienia ze względu na większe pociski
+                    if (proj.position.distanceTo(yawObject.position) < (proj.isBoulder ? 10 : 4)) {
                         takeDamage(proj.isBoulder ? 50 : 20); 
                         if(proj.isBoulder) createParticles(proj.position, 'rock');
                         scene.remove(proj); enemyProjectiles.splice(i, 1); continue;
